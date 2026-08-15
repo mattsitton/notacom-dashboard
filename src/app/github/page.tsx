@@ -1,39 +1,52 @@
 "use client";
 
-import { useState } from "react";
-import { Github, Search, BookOpen, Star, GitFork, ExternalLink, Users } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Github, Search, BookOpen, Star, GitFork, ExternalLink, Users, Lock, Home } from "lucide-react";
 
 export default function GithubPage() {
   const [username, setUsername] = useState("");
-  const [activeUser, setActiveUser] = useState("octocat"); // Default fallback
   const [profile, setProfile] = useState<any>(null);
   const [repos, setRepos] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [isViewingSelf, setIsViewingSelf] = useState(true);
 
-  const fetchGithubData = async (userToFetch: string) => {
+  // Function handles both private and public fetching
+  const fetchGithubData = async (searchUsername?: string) => {
     setLoading(true);
     setError(false);
     try {
-      const [profileRes, reposRes] = await Promise.all([
-        fetch(`https://api.github.com/users/${userToFetch}`),
-        fetch(`https://api.github.com/users/${userToFetch}/repos?sort=updated&per_page=6`)
-      ]);
-
-      if (!profileRes.ok) throw new Error("User not found");
-
-      const profileData = await profileRes.json();
-      const reposData = await reposRes.json();
-
-      setProfile(profileData);
-      setRepos(reposData);
-      setActiveUser(userToFetch);
+      if (searchUsername) {
+        // Public Search Fetch
+        const [profileRes, reposRes] = await Promise.all([
+          fetch(`https://api.github.com/users/${searchUsername}`),
+          fetch(`https://api.github.com/users/${searchUsername}/repos?sort=updated&per_page=6`)
+        ]);
+        if (!profileRes.ok) throw new Error("Not found");
+        setProfile(await profileRes.json());
+        setRepos(await reposRes.json());
+        setIsViewingSelf(false);
+      } else {
+        // Private Authenticated Fetch
+        const res = await fetch('/api/github');
+        if (!res.ok) throw new Error("Auth failed");
+        const data = await res.json();
+        setProfile(data.profile);
+        setRepos(data.repos);
+        setIsViewingSelf(true);
+        setUsername(""); // Clear search bar when going home
+      }
     } catch (err) {
       setError(true);
     } finally {
       setLoading(false);
     }
   };
+
+  // Load authenticated profile on first load
+  useEffect(() => {
+    fetchGithubData();
+  }, []);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,37 +58,48 @@ export default function GithubPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <h1 className="text-3xl font-bold text-zinc-100 tracking-tight flex items-center gap-3">
           <Github className="w-8 h-8" />
-          GitHub Overview
+          {isViewingSelf ? "My GitHub" : "GitHub Search"}
         </h1>
         
-        <form onSubmit={handleSearch} className="flex items-center gap-2">
-          <div className="relative">
-            <Search className="w-4 h-4 text-zinc-500 absolute left-3 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder="Search username..."
-              className="pl-9 pr-4 py-2 bg-zinc-900 border border-zinc-800 rounded-lg text-sm text-zinc-100 focus:outline-none focus:border-indigo-500 transition-colors w-64"
-            />
-          </div>
-          <button type="submit" className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-lg transition-colors">
-            Fetch
-          </button>
-        </form>
+        <div className="flex items-center gap-2">
+          {!isViewingSelf && (
+            <button 
+              onClick={() => fetchGithubData()} 
+              className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-100 text-sm font-medium rounded-lg transition-colors flex items-center gap-2"
+            >
+              <Home className="w-4 h-4" />
+              My Profile
+            </button>
+          )}
+          <form onSubmit={handleSearch} className="flex items-center gap-2">
+            <div className="relative">
+              <Search className="w-4 h-4 text-zinc-500 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="Search username..."
+                className="pl-9 pr-4 py-2 bg-zinc-900 border border-zinc-800 rounded-lg text-sm text-zinc-100 focus:outline-none focus:border-indigo-500 transition-colors w-64"
+              />
+            </div>
+            <button type="submit" className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-lg transition-colors">
+              Fetch
+            </button>
+          </form>
+        </div>
       </div>
 
       {error && (
         <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm">
-          User not found or API rate limit exceeded. Try again later.
+          Failed to load data. Ensure the username exists or your API token is valid.
         </div>
       )}
 
       {loading ? (
         <div className="h-64 flex items-center justify-center border border-zinc-800 rounded-xl bg-zinc-900/50 animate-pulse">
-          <p className="text-zinc-500 font-medium">Fetching developer data...</p>
+          <p className="text-zinc-500 font-medium">Fetching GitHub data...</p>
         </div>
-      ) : profile ? (
+      ) : profile && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           
           {/* Profile Card */}
@@ -102,7 +126,7 @@ export default function GithubPage() {
                 <BookOpen className="w-5 h-5 text-green-400" />
                 <div>
                   <p className="text-xs text-zinc-500 font-medium uppercase">Repos</p>
-                  <p className="text-lg font-bold text-zinc-100">{profile.public_repos}</p>
+                  <p className="text-lg font-bold text-zinc-100">{profile.public_repos + (profile.total_private_repos || 0)}</p>
                 </div>
               </div>
             </div>
@@ -124,7 +148,10 @@ export default function GithubPage() {
                 >
                   <div>
                     <div className="flex items-start justify-between mb-2">
-                      <h4 className="font-semibold text-indigo-400 truncate pr-4 group-hover:underline">{repo.name}</h4>
+                      <h4 className="font-semibold text-indigo-400 truncate pr-4 group-hover:underline flex items-center gap-2">
+                        {repo.private && <Lock className="w-3.5 h-3.5 text-amber-400 shrink-0" />}
+                        {repo.name}
+                      </h4>
                       <ExternalLink className="w-4 h-4 text-zinc-600 group-hover:text-zinc-400 shrink-0" />
                     </div>
                     <p className="text-zinc-400 text-sm line-clamp-2">{repo.description || "No description provided."}</p>
@@ -145,11 +172,6 @@ export default function GithubPage() {
             </div>
           </div>
           
-        </div>
-      ) : (
-        <div className="h-64 flex flex-col items-center justify-center border border-zinc-800 rounded-xl bg-zinc-900/50">
-          <Github className="w-12 h-12 text-zinc-700 mb-4" />
-          <p className="text-zinc-400 font-medium">Search for a GitHub user to load their dashboard.</p>
         </div>
       )}
     </div>
