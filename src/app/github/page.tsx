@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Github, Search, BookOpen, Star, GitFork, ExternalLink, Users, Lock, Home } from "lucide-react";
+import { GitBranch, Search, BookOpen, Star, GitFork, ExternalLink, Users, Lock, Home } from "lucide-react";
 
 export default function GithubPage() {
   const [username, setUsername] = useState("");
@@ -57,7 +57,7 @@ export default function GithubPage() {
     <div className="max-w-7xl mx-auto space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <h1 className="text-3xl font-bold text-zinc-100 tracking-tight flex items-center gap-3">
-          <Github className="w-8 h-8" />
+          <GitBranch className="w-8 h-8" />
           {isViewingSelf ? "My GitHub" : "GitHub Search"}
         </h1>
         
