@@ -8,42 +8,46 @@ export default function GithubPage() {
   const [profile, setProfile] = useState<any>(null);
   const [repos, setRepos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
+  const [error, setError] = useState<string>("");
   const [isViewingSelf, setIsViewingSelf] = useState(true);
 
-  // Function handles both private and public fetching
   const fetchGithubData = async (searchUsername?: string) => {
     setLoading(true);
-    setError(false);
+    setError("");
     try {
       if (searchUsername) {
-        // Public Search Fetch
         const [profileRes, reposRes] = await Promise.all([
           fetch(`https://api.github.com/users/${searchUsername}`),
           fetch(`https://api.github.com/users/${searchUsername}/repos?sort=updated&per_page=6`)
         ]);
-        if (!profileRes.ok) throw new Error("Not found");
+        if (!profileRes.ok) throw new Error("User not found on GitHub.");
         setProfile(await profileRes.json());
         setRepos(await reposRes.json());
         setIsViewingSelf(false);
       } else {
-        // Private Authenticated Fetch
         const res = await fetch('/api/github');
-        if (!res.ok) throw new Error("Auth failed");
+        
+        // SAFETY CHECK: Ensure the server sent JSON, not an HTML error page
+        const contentType = res.headers.get("content-type");
+        if (!contentType || !contentType.includes("application/json")) {
+          throw new Error(`Server returned HTML instead of JSON (HTTP Status: ${res.status}). Ensure your server was restarted!`);
+        }
+
         const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Failed to fetch from backend");
+        
         setProfile(data.profile);
         setRepos(data.repos);
         setIsViewingSelf(true);
-        setUsername(""); // Clear search bar when going home
+        setUsername("");
       }
-    } catch (err) {
-      setError(true);
+    } catch (err: any) {
+      setError(err.message);
     } finally {
       setLoading(false);
     }
   };
 
-  // Load authenticated profile on first load
   useEffect(() => {
     fetchGithubData();
   }, []);
@@ -90,8 +94,8 @@ export default function GithubPage() {
       </div>
 
       {error && (
-        <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm">
-          Failed to load data. Ensure the username exists or your API token is valid.
+        <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm font-mono">
+          {error}
         </div>
       )}
 
@@ -99,7 +103,7 @@ export default function GithubPage() {
         <div className="h-64 flex items-center justify-center border border-zinc-800 rounded-xl bg-zinc-900/50 animate-pulse">
           <p className="text-zinc-500 font-medium">Fetching GitHub data...</p>
         </div>
-      ) : profile && (
+      ) : profile && !error ? (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           
           {/* Profile Card */}
@@ -173,7 +177,7 @@ export default function GithubPage() {
           </div>
           
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

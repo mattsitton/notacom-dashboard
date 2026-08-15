@@ -1,9 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Mail, RefreshCw, LogOut, Search, Inbox, AlertCircle } from "lucide-react";
+import { Mail, RefreshCw, LogOut, Inbox, AlertCircle } from "lucide-react";
 
-// Tell TypeScript that the Google script will inject this global variable
 declare global {
   interface Window {
     google?: any;
@@ -20,7 +19,6 @@ export default function EmailHubPage() {
   const CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
   const SCOPES = "https://www.googleapis.com/auth/gmail.readonly";
 
-  // Load the Google Identity script
   useEffect(() => {
     const script = document.createElement("script");
     script.src = "https://accounts.google.com/gsi/client";
@@ -38,9 +36,10 @@ export default function EmailHubPage() {
     const client = window.google.accounts.oauth2.initTokenClient({
       client_id: CLIENT_ID,
       scope: SCOPES,
+      prompt: 'select_account', // Forces Google to show the account chooser every time
       callback: (response: any) => {
         if (response.error) {
-          setError("Authentication failed.");
+          setError(`Auth Error: ${response.error}`);
           return;
         }
         setToken(response.access_token);
@@ -54,11 +53,15 @@ export default function EmailHubPage() {
     setLoading(true);
     setError("");
     try {
-      // 1. Fetch the list of the 10 most recent email IDs
       const listRes = await fetch("https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=10", {
         headers: { Authorization: `Bearer ${accessToken}` }
       });
-      if (!listRes.ok) throw new Error("Failed to fetch email list");
+      
+      if (!listRes.ok) {
+        const errorData = await listRes.json();
+        throw new Error(errorData.error?.message || `HTTP Error ${listRes.status}`);
+      }
+      
       const listData = await listRes.json();
       
       if (!listData.messages) {
@@ -67,7 +70,6 @@ export default function EmailHubPage() {
         return;
       }
 
-      // 2. Fetch the actual content for each email ID
       const detailedEmails = await Promise.all(
         listData.messages.map(async (msg: { id: string }) => {
           const msgRes = await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${msg.id}?format=metadata&metadataHeaders=Subject&metadataHeaders=From&metadataHeaders=Date`, {
@@ -80,7 +82,6 @@ export default function EmailHubPage() {
           const fromRaw = headers.find((h: any) => h.name === "From")?.value || "Unknown Sender";
           const date = headers.find((h: any) => h.name === "Date")?.value;
           
-          // Clean up "Name <email@domain.com>" format
           const from = fromRaw.split("<")[0].replace(/"/g, "").trim();
 
           return {
@@ -94,8 +95,8 @@ export default function EmailHubPage() {
       );
       
       setEmails(detailedEmails);
-    } catch (err) {
-      setError("Failed to load inbox. Token may have expired.");
+    } catch (err: any) {
+      setError(`Google API Rejected: ${err.message}`);
       setToken(null);
     } finally {
       setLoading(false);
@@ -105,6 +106,7 @@ export default function EmailHubPage() {
   const handleLogout = () => {
     setToken(null);
     setEmails([]);
+    setError("");
   };
 
   return (
@@ -137,8 +139,8 @@ export default function EmailHubPage() {
 
       {error && (
         <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex items-start gap-3 text-red-400 text-sm">
-          <AlertCircle className="w-5 h-5 shrink-0" />
-          <p>{error}</p>
+          <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
+          <p className="font-mono">{error}</p>
         </div>
       )}
 
