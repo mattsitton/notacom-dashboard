@@ -1,10 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-  <!-- Dark zinc-900 background -->
-  <rect width="100" height="100" rx="24" fill="#18181b"/>
+  <!-- Your custom dark background -->
+  <rect width="100" height="100" rx="24" fill="#202124"/>
   
-  <!-- Glowing indigo-400 stylized 'N' -->
+  <!-- Your custom Mint Green glowing 'N' -->
   <path d="M28 72 V28 L72 72 V28" 
-        stroke="#818cf8" 
+        stroke="#87FFC5" 
         stroke-width="12" 
         stroke-linecap="round" 
         stroke-linejoin="round" 
