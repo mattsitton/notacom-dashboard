@@ -112,7 +112,7 @@ export default function GithubPage() {
               <img src={profile.avatar_url} alt="Avatar" className="w-20 h-20 rounded-full border border-zinc-700" />
               <div>
                 <h2 className="text-xl font-bold text-zinc-100">{profile.name || profile.login}</h2>
-                <a href={profile.html_url} target="_blank" rel="noreferrer" className="text-indigo-400 text-sm hover:underline">@{profile.login}</a>
+                <a href={profile.html_url} target="_blank" rel="noreferrer" className="text-[#87FFC5] text-sm hover:underline">@{profile.login}</a>
               </div>
             </div>
             
@@ -152,7 +152,7 @@ export default function GithubPage() {
                 >
                   <div>
                     <div className="flex items-start justify-between mb-2">
-                      <h4 className="font-semibold text-indigo-400 truncate pr-4 group-hover:underline flex items-center gap-2">
+                      <h4 className="font-semibold text-[#87FFC5] truncate pr-4 group-hover:underline flex items-center gap-2">
                         {repo.private && <Lock className="w-3.5 h-3.5 text-amber-400 shrink-0" />}
                         {repo.name}
                       </h4>

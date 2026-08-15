@@ -20,7 +20,7 @@ export default function Clock() {
   return (
     <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 shadow-lg flex items-center gap-6">
       <div className="p-4 bg-indigo-500/10 rounded-full">
-        <ClockIcon className="w-8 h-8 text-indigo-400" />
+        <ClockIcon className="w-8 h-8 text-[#87FFC5]" />
       </div>
       <div>
         <p className="text-zinc-400 text-sm font-medium uppercase tracking-wider mb-1">Local Time</p>

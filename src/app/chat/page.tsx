@@ -57,7 +57,7 @@ export default function ChatPage() {
     <div className="max-w-4xl mx-auto h-[85vh] flex flex-col bg-zinc-950 border border-zinc-800 rounded-xl overflow-hidden shadow-2xl">
       
       <div className="bg-zinc-900 border-b border-zinc-800 p-4 flex items-center gap-3">
-        <Sparkles className="w-6 h-6 text-indigo-400" />
+        <Sparkles className="w-6 h-6 text-[#87FFC5]" />
         <h1 className="text-xl font-bold text-zinc-100">Gemini AI Assistant</h1>
       </div>
 
@@ -65,7 +65,7 @@ export default function ChatPage() {
         {messages.map((msg, index) => (
           <div key={index} className={`flex gap-4 ${msg.role === "user" ? "flex-row-reverse" : ""}`}>
             <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${msg.role === "user" ? "bg-indigo-600" : "bg-zinc-800 border border-zinc-700"}`}>
-              {msg.role === "user" ? <User className="w-4 h-4 text-white" /> : <Bot className="w-4 h-4 text-indigo-400" />}
+              {msg.role === "user" ? <User className="w-4 h-4 text-white" /> : <Bot className="w-4 h-4 text-[#87FFC5]" />}
             </div>
             <div className={`max-w-[80%] p-4 rounded-2xl text-sm leading-relaxed ${
               msg.role === "user" 
@@ -79,7 +79,7 @@ export default function ChatPage() {
         {isLoading && (
           <div className="flex gap-4">
             <div className="w-8 h-8 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center shrink-0">
-              <Bot className="w-4 h-4 text-indigo-400" />
+              <Bot className="w-4 h-4 text-[#87FFC5]" />
             </div>
             <div className="bg-zinc-900 border border-zinc-800 p-4 rounded-2xl rounded-tl-sm flex items-center gap-2 text-zinc-400">
               <Loader2 className="w-4 h-4 animate-spin" />
@@ -103,7 +103,7 @@ export default function ChatPage() {
           <button 
             type="submit" 
             disabled={!input.trim() || isLoading}
-            className="absolute right-2 p-2 text-zinc-400 hover:text-indigo-400 hover:bg-zinc-800 rounded-lg transition-colors disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-zinc-400"
+            className="absolute right-2 p-2 text-zinc-400 hover:text-[#87FFC5] hover:bg-zinc-800 rounded-lg transition-colors disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-zinc-400"
           >
             <Send className="w-5 h-5" />
           </button>

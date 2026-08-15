@@ -41,7 +41,7 @@ export default function RemoteDesktopPage() {
       
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-zinc-900 p-4 rounded-xl border border-zinc-800 shadow-sm">
         <h1 className="text-2xl font-bold text-zinc-100 tracking-tight flex items-center gap-3">
-          <MonitorSmartphone className="w-7 h-7 text-indigo-400" />
+          <MonitorSmartphone className="w-7 h-7 text-[#87FFC5]" />
           Remote Access
         </h1>
         

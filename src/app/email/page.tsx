@@ -147,7 +147,7 @@ export default function EmailHubPage() {
       {!token ? (
         <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-12 text-center shadow-lg flex flex-col items-center justify-center h-[50vh]">
           <div className="w-16 h-16 bg-indigo-500/10 rounded-full flex items-center justify-center mb-6">
-            <Mail className="w-8 h-8 text-indigo-400" />
+            <Mail className="w-8 h-8 text-[#87FFC5]" />
           </div>
           <h2 className="text-xl font-bold text-zinc-100 mb-2">Secure Inbox Access</h2>
           <p className="text-zinc-400 mb-8 max-w-md">
@@ -178,7 +178,7 @@ export default function EmailHubPage() {
             {emails.map((email) => (
               <div key={email.id} className="p-4 hover:bg-zinc-800/50 transition-colors cursor-pointer group">
                 <div className="flex justify-between items-start mb-1">
-                  <span className="font-semibold text-zinc-100 group-hover:text-indigo-400 transition-colors">{email.from}</span>
+                  <span className="font-semibold text-zinc-100 group-hover:text-[#87FFC5] transition-colors">{email.from}</span>
                   <span className="text-xs text-zinc-500 whitespace-nowrap ml-4">{email.date}</span>
                 </div>
                 <h3 className="text-sm font-medium text-zinc-300 mb-1">{email.subject}</h3>

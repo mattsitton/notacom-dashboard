@@ -68,7 +68,7 @@ export default async function Home() {
         {[
           { label: "Sunrise", time: formatTime(todaySunrise), icon: Sunrise, color: "text-amber-400" },
           { label: "Sunset", time: formatTime(todaySunset), icon: Sunset, color: "text-orange-400" },
-          { label: "Last Light", time: formatTime(lastLight), icon: Moon, color: "text-indigo-400" },
+          { label: "Last Light", time: formatTime(lastLight), icon: Moon, color: "text-[#87FFC5]" },
         ].map((event, i) => {
           const Icon = event.icon;
           return (

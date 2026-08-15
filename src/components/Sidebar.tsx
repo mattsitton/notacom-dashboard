@@ -39,7 +39,7 @@ export default function Sidebar() {
         <div className={`p-6 border-b border-zinc-800 flex items-center ${isCollapsed ? "justify-center" : "justify-between"}`}>
           {!isCollapsed && (
             <div className="flex items-center gap-3 overflow-hidden">
-              <LayoutDashboard className="w-6 h-6 text-indigo-400 shrink-0" />
+              <LayoutDashboard className="w-6 h-6 text-[#87FFC5] shrink-0" />
               <span className="font-bold text-zinc-100 text-lg tracking-wide whitespace-nowrap">NOTACOM</span>
             </div>
           )}
