@@ -1,5 +1,5 @@
 import Clock from "@/components/Clock";
-import { Droplets, Thermometer, ThermometerSun, Sunrise, Sunset, Moon } from "lucide-react";
+import { Droplets, Thermometer, ThermometerSun, Sunrise, Sunset, Moon, Cloud } from "lucide-react";
 
 async function getWeatherData() {
   // Coordinates for Lacy Lakeview, Texas
@@ -23,8 +23,6 @@ export default async function Home() {
   // Process today's solar data
   const todaySunrise = new Date(daily.sunrise[0]);
   const todaySunset = new Date(daily.sunset[0]);
-  
-  // Approximate last light (Civil twilight ends ~30 mins after sunset)
   const lastLight = new Date(todaySunset.getTime() + 30 * 60000);
 
   const formatTime = (date: Date) => date.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true });
@@ -39,7 +37,7 @@ export default async function Home() {
         
         <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 shadow-lg flex flex-col justify-center">
           <p className="text-zinc-400 text-sm font-medium uppercase tracking-wider mb-4">Lacy Lakeview, TX - Live Metrics</p>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-3 gap-4">
             <div className="flex items-center gap-3">
               <Thermometer className="w-5 h-5 text-red-400" />
               <div>
@@ -52,6 +50,13 @@ export default async function Home() {
               <div>
                 <p className="text-2xl font-bold text-zinc-100">{Math.round(current.wet_bulb_temperature_2m)}°F</p>
                 <p className="text-xs text-zinc-500">Wet-Bulb Temp</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <Cloud className="w-5 h-5 text-gray-400" />
+              <div>
+                <p className="text-2xl font-bold text-zinc-100">{current.cloud_cover}%</p>
+                <p className="text-xs text-zinc-500">Cloud Cover</p>
               </div>
             </div>
           </div>
