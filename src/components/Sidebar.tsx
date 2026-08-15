@@ -2,13 +2,13 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { CloudSun, Mail, Code2, Github, LogOut, LayoutDashboard } from "lucide-react";
+import { CloudSun, Mail, Code2, GitBranch, LogOut, LayoutDashboard } from "lucide-react";
 
 const navItems = [
   { name: "Home", href: "/", icon: CloudSun },
   { name: "Email Hub", href: "/email", icon: Mail },
   { name: "Code Editor", href: "/editor", icon: Code2 },
-  { name: "GitHub", href: "/github", icon: Github },
+  { name: "GitHub", href: "/github", icon: GitBranch },
 ];
 
 export default function Sidebar() {
