@@ -3,11 +3,12 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { CloudSun, Mail, Code2, GitBranch, Server, Sparkles, LogOut, LayoutDashboard, ChevronLeft, Menu, Link as LinkIcon } from "lucide-react";
+import { CloudSun, Mail, Code2, GitBranch, Server, Sparkles, LogOut, LayoutDashboard, ChevronLeft, Menu, Link as LinkIcon, Gamepad2 } from "lucide-react";
 
 const navItems = [
   { name: "Dashboard", href: "/", icon: CloudSun },
   { name: "Web Scraper", href: "/scraper", icon: LinkIcon },
+  { name: "Chess", href: "/chess", icon: Gamepad2 },
   { name: "AI Assistant", href: "/chat", icon: Sparkles },
   { name: "Email Hub", href: "/email", icon: Mail },
   { name: "Code Editor", href: "/editor", icon: Code2 },
