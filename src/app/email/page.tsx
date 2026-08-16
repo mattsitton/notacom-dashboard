@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Mail, RefreshCw, LogOut, Inbox, AlertCircle } from "lucide-react";
+import ExpandingEmailList from "@/components/ExpandingEmailList";
 
 declare global {
   interface Window {
@@ -36,7 +37,7 @@ export default function EmailHubPage() {
     const client = window.google.accounts.oauth2.initTokenClient({
       client_id: CLIENT_ID,
       scope: SCOPES,
-      prompt: 'select_account', // Forces Google to show the account chooser every time
+      prompt: 'select_account',
       callback: (response: any) => {
         if (response.error) {
           setError(`Auth Error: ${response.error}`);
@@ -174,21 +175,15 @@ export default function EmailHubPage() {
             <Inbox className="w-4 h-4" />
             Recent Messages
           </div>
-          <div className="divide-y divide-zinc-800/50">
-            {emails.map((email) => (
-              <div key={email.id} className="p-4 hover:bg-zinc-800/50 transition-colors cursor-pointer group">
-                <div className="flex justify-between items-start mb-1">
-                  <span className="font-semibold text-zinc-100 group-hover:text-[#87FFC5] transition-colors">{email.from}</span>
-                  <span className="text-xs text-zinc-500 whitespace-nowrap ml-4">{email.date}</span>
-                </div>
-                <h3 className="text-sm font-medium text-zinc-300 mb-1">{email.subject}</h3>
-                <p className="text-sm text-zinc-500 line-clamp-1" dangerouslySetInnerHTML={{ __html: email.snippet }}></p>
-              </div>
-            ))}
-            {emails.length === 0 && (
+          
+          <div className="p-4">
+            {emails.length === 0 ? (
               <div className="p-8 text-center text-zinc-500">No recent messages found.</div>
+            ) : (
+              <ExpandingEmailList emails={emails} accessToken={token} />
             )}
           </div>
+          
         </div>
       )}
     </div>

@@ -3,10 +3,11 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { CloudSun, Mail, Code2, GitBranch, Server, Sparkles, LogOut, LayoutDashboard, ChevronLeft, Menu } from "lucide-react";
+import { CloudSun, Mail, Code2, GitBranch, Server, Sparkles, LogOut, LayoutDashboard, ChevronLeft, Menu, Link as LinkIcon } from "lucide-react";
 
 const navItems = [
   { name: "Dashboard", href: "/", icon: CloudSun },
+  { name: "Web Scraper", href: "/scraper", icon: LinkIcon },
   { name: "AI Assistant", href: "/chat", icon: Sparkles },
   { name: "Email Hub", href: "/email", icon: Mail },
   { name: "Code Editor", href: "/editor", icon: Code2 },
@@ -19,7 +20,6 @@ export default function Sidebar() {
   const router = useRouter();
   const [isCollapsed, setIsCollapsed] = useState(false);
 
-  // Hide sidebar entirely on the login page
   if (pathname === "/login") return null;
 
   const handleLogout = async () => {
@@ -35,7 +35,6 @@ export default function Sidebar() {
       }`}
     >
       <div>
-        {/* Header Area */}
         <div className={`p-6 border-b border-zinc-800 flex items-center ${isCollapsed ? "justify-center" : "justify-between"}`}>
           {!isCollapsed && (
             <div className="flex items-center gap-3 overflow-hidden">
@@ -52,7 +51,6 @@ export default function Sidebar() {
           </button>
         </div>
         
-        {/* Navigation Links */}
         <nav className="p-4 space-y-2">
           {navItems.map((item) => {
             const Icon = item.icon;
@@ -76,7 +74,6 @@ export default function Sidebar() {
         </nav>
       </div>
 
-      {/* Footer / Logout */}
       <div className="p-4 border-t border-zinc-800">
         <button
           onClick={handleLogout}
