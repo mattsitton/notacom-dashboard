@@ -36,7 +36,7 @@ export default function GitHubPage() {
     if (profileRes.error) {
       setError(profileRes.error);
     } else {
-      setProfile(profileRes.data);
+      setProfile(profileRes.data || null);
       setRepos(reposRes.data || []);
       setIsViewingSelf(!searchUser);
     }
@@ -46,11 +46,9 @@ export default function GitHubPage() {
   const handleSearch = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && searchQuery) {
       if (searchQuery.includes('/')) {
-        // Direct repo lookup (e.g., vercel/next.js)
         const [owner, name] = searchQuery.split('/');
         openRepo({ owner: { login: owner }, name });
       } else {
-        // User lookup (e.g., vercel)
         loadDashboard(searchQuery);
       }
     }
@@ -69,7 +67,8 @@ export default function GitHubPage() {
     const res = await getRepoContents(owner, repo, path);
     if (res.error) setError(res.error);
     else {
-      setContents(res.data);
+      // FIX: Added '|| []' to satisfy TypeScript's strict rules!
+      setContents(res.data || []);
       setCurrentPath(path);
     }
     setLoading(false);
@@ -98,7 +97,8 @@ export default function GitHubPage() {
       const newFile: FileData = {
         id: item.sha,
         name: item.name,
-        content: res.data.decodedContent,
+        // FIX: Added fallback to satisfy TypeScript
+        content: res.data?.decodedContent || "",
         language,
         sha: item.sha,
         repo: selectedRepo.name,
@@ -126,7 +126,6 @@ export default function GitHubPage() {
     setLoading(false);
   };
 
-  // MAGIC HAPPENS HERE: We filter the repos based on what you type!
   const filteredRepos = repos.filter(repo => 
     repo.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
     (repo.description && repo.description.toLowerCase().includes(searchQuery.toLowerCase()))
@@ -178,7 +177,6 @@ export default function GitHubPage() {
           )}
           {loading && !error && <div className="flex justify-center p-8"><Loader2 className="w-6 h-6 text-[#87FFC5] animate-spin" /></div>}
 
-          {/* Render Filtered Repos in Sidebar */}
           {!loading && !selectedRepo && filteredRepos.map((repo) => (
             <div key={repo.id} onClick={() => openRepo(repo)} className="p-3 hover:bg-zinc-800/50 rounded-lg cursor-pointer transition-colors border border-transparent hover:border-zinc-700 mb-1">
               <div className="font-medium text-zinc-200 flex items-center gap-2">
@@ -188,7 +186,6 @@ export default function GitHubPage() {
             </div>
           ))}
 
-          {/* Render Files/Folders in Sidebar */}
           {!loading && selectedRepo && !error && (
             <div className="space-y-1">
               {currentPath && (
@@ -237,7 +234,6 @@ export default function GitHubPage() {
             </h2>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {/* Render Filtered Repo Cards! */}
               {filteredRepos.map(repo => (
                 <div key={repo.id} onClick={() => openRepo(repo)} className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 hover:border-zinc-600 transition-all cursor-pointer group shadow-md hover:shadow-lg">
                   <div className="flex justify-between items-start mb-3">
@@ -256,7 +252,6 @@ export default function GitHubPage() {
               ))}
             </div>
 
-            {/* If they type something that isn't in their current list */}
             {!loading && filteredRepos.length === 0 && (
                <div className="text-zinc-500 text-center py-12 bg-zinc-900/50 rounded-xl border border-zinc-800">
                  <Search className="w-8 h-8 mx-auto mb-3 opacity-50" />
