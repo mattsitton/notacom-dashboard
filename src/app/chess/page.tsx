@@ -1,23 +1,19 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Gamepad2, RotateCcw, AlertTriangle } from "lucide-react";
 import { Chess, Square } from "chess.js";
 
-// Map chess.js piece objects to our cool Unicode characters
 const pieceMap: Record<string, Record<string, string>> = {
   w: { p: "♙", n: "♘", b: "♗", r: "♖", q: "♕", k: "♔" },
   b: { p: "♟", n: "♞", b: "♝", r: "♜", q: "♛", k: "♚" }
 };
 
 export default function ChessPage() {
-  // The 'brain' holds all the rules, history, and logic
   const [game, setGame] = useState(new Chess());
-  // We track the FEN (a string representing the board state) to trigger React re-renders
   const [fen, setFen] = useState(game.fen());
   const [selectedSquare, setSelectedSquare] = useState<Square | null>(null);
 
-  // Convert row (0-7) and col (0-7) to algebraic notation (e.g., 'e2')
   const toAlgebraic = (row: number, col: number): Square => {
     const file = String.fromCharCode(97 + col);
     const rank = 8 - row;
@@ -30,7 +26,6 @@ export default function ChessPage() {
     const square = toAlgebraic(row, col);
     const pieceOnSquare = game.get(square);
 
-    // 1. If no square is selected, try to select one of your own pieces
     if (!selectedSquare) {
       if (pieceOnSquare && pieceOnSquare.color === game.turn()) {
         setSelectedSquare(square);
@@ -38,37 +33,31 @@ export default function ChessPage() {
       return;
     }
 
-    // 2. If clicking the same square, deselect
     if (selectedSquare === square) {
       setSelectedSquare(null);
       return;
     }
 
-    // 3. If clicking another of your own pieces, switch selection
     if (pieceOnSquare && pieceOnSquare.color === game.turn()) {
       setSelectedSquare(square);
       return;
     }
 
-    // 4. Try to move!
     try {
-      // Clone the game to keep state pure
       const gameCopy = new Chess(game.fen());
       
       const move = gameCopy.move({
         from: selectedSquare,
         to: square,
-        promotion: "q", // Always promote to queen for simplicity right now
+        promotion: "q",
       });
 
-      // If valid, update the real game state
       if (move) {
         game.move(move);
         setFen(game.fen());
         setSelectedSquare(null);
       }
     } catch (e) {
-      // Invalid move (chess.js throws an error on illegal moves)
       setSelectedSquare(null);
     }
   };
@@ -80,7 +69,6 @@ export default function ChessPage() {
     setSelectedSquare(null);
   };
 
-  // Derive the 2D array board from the current game state
   const board = game.board();
 
   return (
@@ -124,7 +112,6 @@ export default function ChessPage() {
           )}
         </div>
         
-        {/* Helper to show check state */}
         {game.inCheck() && !game.isCheckmate() && (
            <span className="text-xs font-bold text-red-400 animate-pulse uppercase tracking-widest">
              Check
@@ -134,21 +121,21 @@ export default function ChessPage() {
 
       {/* Board Viewport */}
       <div className="flex justify-center">
-        <div className="grid grid-cols-8 gap-0 border-4 border-zinc-800 rounded-lg overflow-hidden shadow-2xl w-full max-w-[560px] aspect-square">
+        {/* FIX: Added grid-rows-8 to force exactly 8 equal rows */}
+        <div className="grid grid-cols-8 grid-rows-8 gap-0 border-4 border-zinc-800 rounded-lg overflow-hidden shadow-2xl w-full max-w-[560px] aspect-square bg-zinc-800">
           {board.map((row, rIdx) =>
             row.map((pieceObj, cIdx) => {
               const isDark = (rIdx + cIdx) % 2 === 1;
               const squareAlgebraic = toAlgebraic(rIdx, cIdx);
               const isSelected = selectedSquare === squareAlgebraic;
-              
-              // Highlight the king in red if in check
               const isKingInCheck = pieceObj?.type === 'k' && pieceObj.color === game.turn() && game.inCheck();
 
               return (
                 <button
                   key={`${rIdx}-${cIdx}`}
                   onClick={() => handleSquareClick(rIdx, cIdx)}
-                  className={`flex items-center justify-center text-4xl select-none transition-colors duration-150 ${
+                  // FIX: Added w-full h-full so empty buttons don't collapse
+                  className={`w-full h-full flex items-center justify-center text-3xl sm:text-4xl md:text-5xl select-none transition-colors duration-150 ${
                     isSelected
                       ? "bg-amber-500/60"
                       : isKingInCheck
