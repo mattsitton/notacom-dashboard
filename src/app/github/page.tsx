@@ -1,183 +1,196 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { GitBranch, Search, BookOpen, Star, GitFork, ExternalLink, Users, Lock, Home } from "lucide-react";
+import { getRepositories, getRepoContents, getFileContent, commitFile } from "@/actions/github";
+import Workspace, { FileData } from "@/components/Workspace";
+import { Folder, FileCode, GitBranch, ArrowLeft, Loader2, AlertCircle } from "lucide-react";
 
-export default function GithubPage() {
-  const [username, setUsername] = useState("");
-  const [profile, setProfile] = useState<any>(null);
+export default function GitHubPage() {
   const [repos, setRepos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string>("");
-  const [isViewingSelf, setIsViewingSelf] = useState(true);
+  const [error, setError] = useState("");
+  
+  // Navigation State
+  const [selectedRepo, setSelectedRepo] = useState<any>(null);
+  const [currentPath, setCurrentPath] = useState("");
+  const [contents, setContents] = useState<any[]>([]);
+  const [history, setHistory] = useState<string[]>([]); // To go "back" in folders
 
-  const fetchGithubData = async (searchUsername?: string) => {
+  // Workspace State
+  const [openFiles, setOpenFiles] = useState<FileData[]>([]);
+
+  useEffect(() => {
+    loadRepos();
+  }, []);
+
+  const loadRepos = async () => {
     setLoading(true);
-    setError("");
-    try {
-      if (searchUsername) {
-        const [profileRes, reposRes] = await Promise.all([
-          fetch(`https://api.github.com/users/${searchUsername}`),
-          fetch(`https://api.github.com/users/${searchUsername}/repos?sort=updated&per_page=6`)
-        ]);
-        if (!profileRes.ok) throw new Error("User not found on GitHub.");
-        setProfile(await profileRes.json());
-        setRepos(await reposRes.json());
-        setIsViewingSelf(false);
-      } else {
-        const res = await fetch('/api/github');
-        
-        // SAFETY CHECK: Ensure the server sent JSON, not an HTML error page
-        const contentType = res.headers.get("content-type");
-        if (!contentType || !contentType.includes("application/json")) {
-          throw new Error(`Server returned HTML instead of JSON (HTTP Status: ${res.status}). Ensure your server was restarted!`);
-        }
+    const res = await getRepositories();
+    if (res.error) setError(res.error);
+    else setRepos(res.data);
+    setLoading(false);
+  };
 
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || "Failed to fetch from backend");
-        
-        setProfile(data.profile);
-        setRepos(data.repos);
-        setIsViewingSelf(true);
-        setUsername("");
-      }
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
+  const openRepo = async (repo: any) => {
+    setSelectedRepo(repo);
+    setCurrentPath("");
+    setHistory([]);
+    loadContents(repo.owner.login, repo.name, "");
+  };
+
+  const loadContents = async (owner: string, repo: string, path: string) => {
+    setLoading(true);
+    const res = await getRepoContents(owner, repo, path);
+    if (res.error) setError(res.error);
+    else setContents(res.data);
+    setCurrentPath(path);
+    setLoading(false);
+  };
+
+  const handleItemClick = async (item: any) => {
+    if (item.type === "dir") {
+      setHistory([...history, currentPath]);
+      loadContents(selectedRepo.owner.login, selectedRepo.name, item.path);
+    } else if (item.type === "file") {
+      setLoading(true);
+      const res = await getFileContent(selectedRepo.owner.login, selectedRepo.name, item.path);
       setLoading(false);
+      
+      if (res.error) {
+        setError(res.error);
+        return;
+      }
+
+      // Determine language for Monaco editor
+      let language = "plaintext";
+      if (item.name.endsWith(".java")) language = "java";
+      else if (item.name.endsWith(".ts") || item.name.endsWith(".tsx")) language = "typescript";
+      else if (item.name.endsWith(".js") || item.name.endsWith(".jsx")) language = "javascript";
+      else if (item.name.endsWith(".md")) language = "markdown";
+      else if (item.name.endsWith(".json")) language = "json";
+      else if (item.name.endsWith(".html")) language = "html";
+      else if (item.name.endsWith(".css")) language = "css";
+
+      const newFile: FileData = {
+        id: item.sha, // Use GitHub SHA as unique ID
+        name: item.name,
+        content: res.data.decodedContent,
+        language,
+        sha: item.sha,
+        repo: selectedRepo.name,
+        path: item.path
+      };
+
+      setOpenFiles([newFile]); // This sends the file to the Workspace!
     }
   };
 
-  useEffect(() => {
-    fetchGithubData();
-  }, []);
+  const handleBack = () => {
+    const previousPath = history[history.length - 1] || "";
+    setHistory(history.slice(0, -1));
+    loadContents(selectedRepo.owner.login, selectedRepo.name, previousPath);
+  };
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (username.trim()) fetchGithubData(username.trim());
+  // Phase 2: Commit handler
+  const handleCommit = async (file: FileData) => {
+    if (!file.sha || !file.path || !selectedRepo) return;
+    
+    const message = prompt(`Enter commit message for ${file.name}:`, `Update ${file.name}`);
+    if (!message) return;
+
+    setLoading(true);
+    const res = await commitFile(
+      selectedRepo.owner.login, 
+      selectedRepo.name, 
+      file.path, 
+      file.content, 
+      message, 
+      file.sha
+    );
+    
+    if (res.error) alert(`Commit failed: ${res.error}`);
+    else alert("Successfully pushed to GitHub!");
+    
+    setLoading(false);
   };
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <h1 className="text-3xl font-bold text-zinc-100 tracking-tight flex items-center gap-3">
-          <GitBranch className="w-8 h-8" />
-          {isViewingSelf ? "My GitHub" : "GitHub Search"}
-        </h1>
-        
-        <div className="flex items-center gap-2">
-          {!isViewingSelf && (
-            <button 
-              onClick={() => fetchGithubData()} 
-              className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-100 text-sm font-medium rounded-lg transition-colors flex items-center gap-2"
-            >
-              <Home className="w-4 h-4" />
-              My Profile
+    <div className="flex h-[85vh] gap-6 max-w-[1600px] mx-auto">
+      
+      {/* LEFT PANEL: File Explorer */}
+      <div className="w-80 bg-zinc-950 border border-zinc-800 rounded-xl flex flex-col overflow-hidden shadow-xl shrink-0">
+        <div className="p-4 border-b border-zinc-800 bg-zinc-900 flex items-center justify-between">
+          <h2 className="font-bold text-zinc-100 flex items-center gap-2">
+            <GitBranch className="w-5 h-5 text-[#87FFC5]" />
+            {selectedRepo ? selectedRepo.name : "Repositories"}
+          </h2>
+          {selectedRepo && (
+            <button onClick={() => setSelectedRepo(null)} className="text-zinc-400 hover:text-white text-xs bg-zinc-800 px-2 py-1 rounded">
+              Switch
             </button>
           )}
-          <form onSubmit={handleSearch} className="flex items-center gap-2">
-            <div className="relative">
-              <Search className="w-4 h-4 text-zinc-500 absolute left-3 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="Search username..."
-                className="pl-9 pr-4 py-2 bg-zinc-900 border border-zinc-800 rounded-lg text-sm text-zinc-100 focus:outline-none focus:border-indigo-500 transition-colors w-64"
-              />
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-2">
+          {error && (
+            <div className="p-3 bg-red-500/10 text-red-400 text-sm rounded mb-4 flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+              <p>{error}</p>
             </div>
-            <button type="submit" className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-lg transition-colors">
-              Fetch
-            </button>
-          </form>
+          )}
+
+          {loading && !error && (
+            <div className="flex justify-center p-8">
+              <Loader2 className="w-6 h-6 text-[#87FFC5] animate-spin" />
+            </div>
+          )}
+
+          {!loading && !selectedRepo && repos.map((repo) => (
+            <div 
+              key={repo.id} 
+              onClick={() => openRepo(repo)}
+              className="p-3 hover:bg-zinc-800/50 rounded-lg cursor-pointer transition-colors border border-transparent hover:border-zinc-700 mb-1"
+            >
+              <div className="font-medium text-zinc-200">{repo.name}</div>
+              <div className="text-xs text-zinc-500 truncate mt-1">{repo.description || "No description"}</div>
+            </div>
+          ))}
+
+          {!loading && selectedRepo && (
+            <div className="space-y-1">
+              {currentPath && (
+                <div onClick={handleBack} className="flex items-center gap-2 p-2 hover:bg-zinc-800/50 rounded cursor-pointer text-zinc-400">
+                  <ArrowLeft className="w-4 h-4" />
+                  <span className="text-sm font-medium">Back</span>
+                </div>
+              )}
+              
+              {contents.map((item) => (
+                <div 
+                  key={item.sha} 
+                  onClick={() => handleItemClick(item)}
+                  className="flex items-center gap-3 p-2 hover:bg-zinc-800/50 rounded cursor-pointer transition-colors group"
+                >
+                  {item.type === "dir" ? (
+                    <Folder className="w-4 h-4 text-blue-400 fill-blue-400/20" />
+                  ) : (
+                    <FileCode className="w-4 h-4 text-zinc-400 group-hover:text-zinc-200" />
+                  )}
+                  <span className="text-sm text-zinc-300 group-hover:text-zinc-100 truncate">
+                    {item.name}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
-      {error && (
-        <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm font-mono">
-          {error}
-        </div>
-      )}
+      {/* RIGHT PANEL: The Shared Workspace Engine */}
+      <div className="flex-1 min-w-0">
+        <Workspace initialFiles={openFiles} onCommit={handleCommit} />
+      </div>
 
-      {loading ? (
-        <div className="h-64 flex items-center justify-center border border-zinc-800 rounded-xl bg-zinc-900/50 animate-pulse">
-          <p className="text-zinc-500 font-medium">Fetching GitHub data...</p>
-        </div>
-      ) : profile && !error ? (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          
-          {/* Profile Card */}
-          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 shadow-lg h-fit">
-            <div className="flex items-center gap-4 mb-6">
-              <img src={profile.avatar_url} alt="Avatar" className="w-20 h-20 rounded-full border border-zinc-700" />
-              <div>
-                <h2 className="text-xl font-bold text-zinc-100">{profile.name || profile.login}</h2>
-                <a href={profile.html_url} target="_blank" rel="noreferrer" className="text-[#87FFC5] text-sm hover:underline">@{profile.login}</a>
-              </div>
-            </div>
-            
-            {profile.bio && <p className="text-zinc-400 text-sm mb-6 pb-6 border-b border-zinc-800">{profile.bio}</p>}
-            
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-zinc-950 p-3 rounded-lg border border-zinc-800 flex items-center gap-3">
-                <Users className="w-5 h-5 text-blue-400" />
-                <div>
-                  <p className="text-xs text-zinc-500 font-medium uppercase">Followers</p>
-                  <p className="text-lg font-bold text-zinc-100">{profile.followers}</p>
-                </div>
-              </div>
-              <div className="bg-zinc-950 p-3 rounded-lg border border-zinc-800 flex items-center gap-3">
-                <BookOpen className="w-5 h-5 text-green-400" />
-                <div>
-                  <p className="text-xs text-zinc-500 font-medium uppercase">Repos</p>
-                  <p className="text-lg font-bold text-zinc-100">{profile.public_repos + (profile.total_private_repos || 0)}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Repositories Grid */}
-          <div className="lg:col-span-2 space-y-4">
-            <h3 className="text-lg font-semibold text-zinc-100 flex items-center gap-2">
-              Recently Updated
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {repos.map((repo) => (
-                <a 
-                  key={repo.id} 
-                  href={repo.html_url} 
-                  target="_blank" 
-                  rel="noreferrer"
-                  className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 shadow-sm hover:border-zinc-600 transition-colors group flex flex-col justify-between h-40"
-                >
-                  <div>
-                    <div className="flex items-start justify-between mb-2">
-                      <h4 className="font-semibold text-[#87FFC5] truncate pr-4 group-hover:underline flex items-center gap-2">
-                        {repo.private && <Lock className="w-3.5 h-3.5 text-amber-400 shrink-0" />}
-                        {repo.name}
-                      </h4>
-                      <ExternalLink className="w-4 h-4 text-zinc-600 group-hover:text-zinc-400 shrink-0" />
-                    </div>
-                    <p className="text-zinc-400 text-sm line-clamp-2">{repo.description || "No description provided."}</p>
-                  </div>
-                  
-                  <div className="flex items-center gap-4 mt-4 text-xs text-zinc-500">
-                    {repo.language && (
-                      <span className="flex items-center gap-1.5">
-                        <span className="w-2.5 h-2.5 rounded-full bg-yellow-400"></span>
-                        {repo.language}
-                      </span>
-                    )}
-                    <span className="flex items-center gap-1"><Star className="w-3.5 h-3.5" /> {repo.stargazers_count}</span>
-                    <span className="flex items-center gap-1"><GitFork className="w-3.5 h-3.5" /> {repo.forks_count}</span>
-                  </div>
-                </a>
-              ))}
-            </div>
-          </div>
-          
-        </div>
-      ) : null}
     </div>
   );
 }
