@@ -4,7 +4,8 @@ import { ImapFlow } from 'imapflow';
 import { simpleParser, ParsedMail } from 'mailparser';
 import { unstable_noStore as noStore } from 'next/cache';
 
-export async function getEmails() {
+// TypeScript Fix #3: Add "timestamp?: number" back so the Refresh button can pass Date.now() without TS getting mad
+export async function getEmails(timestamp?: number) {
   noStore();
   
   const client = new ImapFlow({
@@ -27,17 +28,14 @@ export async function getEmails() {
     try {
       const uids = await client.search({ all: true }, { uid: true });
       
-      if (uids.length > 0) {
+      // TypeScript Fix #1 & #2: Explicitly check if uids is an Array before using .length or .slice
+      if (Array.isArray(uids) && uids.length > 0) {
         const newestUids = uids.slice(-20);
         const range = newestUids.join(',');
 
-        // Removed the invalid "reverse" option causing the FetchOptions error
         for await (const message of client.fetch(range, { source: true }, { uid: true })) {
-          
-          // TypeScript Fix: Prove to TypeScript that the email source actually exists
           if (!message.source) continue;
 
-          // TypeScript Fix: Explicitly cast the output to ParsedMail so TS knows exactly what properties exist
           const parsed = await simpleParser(message.source) as ParsedMail;
           
           emails.push({
