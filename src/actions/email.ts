@@ -3,7 +3,8 @@
 import { ImapFlow } from 'imapflow';
 import { simpleParser } from 'mailparser';
 
-export async function getEmails() {
+// We pass a timestamp here to bust Vercel's aggressive cache!
+export async function getEmails(timestamp?: number) {
   const client = new ImapFlow({
     host: 'imap.gmail.com',
     port: 993,
@@ -22,15 +23,12 @@ export async function getEmails() {
     const lock = await client.getMailboxLock('INBOX');
     
     try {
-      // Find out exactly how many emails are in the inbox
       const totalMessages = client.mailbox.exists;
       
       if (totalMessages > 0) {
-        // Calculate the range to get the 20 most recent emails
         const start = Math.max(1, totalMessages - 19);
         const range = `${start}:*`;
 
-        // reverse: true ensures the absolute newest is at the top of the list
         for await (const message of client.fetch(range, { source: true }, { uid: false, reverse: true })) {
           const parsed = await simpleParser(message.source);
           emails.push({
@@ -39,7 +37,6 @@ export async function getEmails() {
             from: parsed.from?.text || "Unknown Sender",
             date: parsed.date ? parsed.date.toLocaleDateString() : "Unknown Date",
             text: parsed.text, 
-            // Save the HTML so we can render it on the website
             html: parsed.html || parsed.textAsHtml || `<div style="font-family: sans-serif; padding: 20px;">${parsed.text}</div>`,
           });
         }
